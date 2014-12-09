@@ -42,6 +42,10 @@ my $vectorfetch;
 my $cleanup;
 my $cleanupandexit;
 
+# XXX workaround to avoid data missing when munin-asyncd and
+# munin-async --spoolfetch run almost at the same time
+my $overlap = 300;
+
 my $verbose;
 my $debug;
 my $help;
@@ -51,6 +55,7 @@ GetOptions(
         "hostname=s" => \$overridehost,
         "cleanup" => \$cleanup,
         "cleanupandexit" => \$cleanupandexit,
+        "overlap=i" => \$overlap,
 
         "spoolfetch" => \$spoolfetch,
         "vectorfetch" => \$vectorfetch,
@@ -100,7 +105,7 @@ while (my $line = <>) {
 		print ".\n";
 	} elsif ($line =~ m/^spoolfetch (\d+)/) {
 		my $last_epoch = $1;
-		print $spoolreader->fetch($last_epoch);
+		print $spoolreader->fetch($last_epoch - $overlap);
 		print ".\n";
 	} elsif ($spoolfetch && $line =~ m/^cap/) {
 		print "cap spool\n";
@@ -149,11 +154,11 @@ munin-async [options]
      --hostname <hostname>      Overrides the hostname [`hostname`]
      --cleanup                  Clean up the spooldir after interactive session completes
      --cleanupandexit           Clean up the spooldir and exit (non-interactive)
+     --overlap <seconds>        Time-based overlap of data spoolfetch will feed [300]
 
      --spoolfetch               Enables the "spool" capability [no]
      --vectorfetch              Enables the "vectorized" fetching capability [no]
-                                  Note that without this flag, the "fetch" 
-				  command is disabled.
+                                Note that without this flag, the "fetch" command is disabled.
 
      -v --verbose               Be verbose
      -h --help                  View this message	
